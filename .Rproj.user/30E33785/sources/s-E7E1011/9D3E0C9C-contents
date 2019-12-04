@@ -1,0 +1,104 @@
+---
+title: "1127_Himeari"
+author: "Yuki Kawano"
+date: "11/28/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+require("knitr")
+source_path <- "/Users/yuki/github/ANTAM_Analysis_R/"
+knitr::opts_chunk$set(echo = TRUE)
+opts_knit$set(root.dir =  source_path)
+```
+
+
+# 1. Input_data
+ソースコード及びcsvデータのpathの設定
+```{r}
+options(encoding="UTF-8")
+setwd(source_path)
+source("input_parameter.R")
+source("input_csv_from_ANTAM.R")
+data_path <- "/Users/yuki/OneDrive - cc.kyoto-su.ac.jp/M2/Experiment_data/R_study_testdata"
+setwd(data_path)
+
+
+# Get File List
+# csvデータのファイルの取得
+fl <- list.files(data_path,recursive=T, include.dirs=T, pattern="mouse.*csv")
+dt <- get.datatable(fl)
+path.unique <- as.character(unique(dt$path))
+cond.unique <- c(list.files(data_path))
+n <- length(unique(dt$id))
+uid <- unique(dt$id)
+# u.ind.id <- length(path.unique) / length(cond.unique) # 個体Noを割り振るための変数
+```
+
+# 2. Plot velocity histgram
+取得した実験データから移動速度のヒストグラムを生成
+```{r}
+setwd(source_path)
+source("velocity_histgram.R")
+thresh <- 0 # get.thre() / 5 # 移動，停止の閾値を設ける場合，設定
+```
+
+# 4. Plot comparison each data
+## 実験条件ごとにラベル分け
+```{r}
+stop.ratio <- c()
+condition <- c()
+meanv <- c()
+nega <- c()
+ind.id  <- c()
+trajectory_xy_max <- c()
+num <- c()
+for (i in 1:n) {
+ subd <- subset(dt, id == as.numeric(uid[i]))
+ num <- i
+
+ condition
+ for (j in 1:length(cond.unique)) {
+   if (length(grep(cond.unique[j], subd$path)) > 0)
+     condition[i] <- cond.unique[j]
+  }
+ 
+ # for(i in 1:length(cond.unique)){
+ #   for(j in 1:length(u.ind.id)){
+ #     ind.id <- j
+ #   }
+ # }
+
+ #velovity & stop raio
+ dx <- diff(subd$x.V1)
+ dy <- diff(subd$y.V1)
+ v <- sqrt(dx ^ 2 + dy ^ 2)
+ stop.ratio[i] <- length(which(v < thresh)) / length(v)
+ meanv[i] <- mean(v[v > thresh])*5
+
+ # minmax for trajectory
+ abs_4points_xy <- c(abs(min(subd$x.V1)), abs(min(subd$y.V1)), abs(max(subd$x.V1)), abs(max(subd$y.V1)))
+ trajectory_xy_max[i] <- max(abs_4points_xy)
+}
+```
+#5. 実験データの前処理
+```{r}
+# 全条件をまとめたデータ
+result <- data.frame(condition = condition, meanv = meanv, stop = stop.ratio, trajectory_xy_max = trajectory_xy_max,num = num)
+```
+
+#6.平均とSEをプロット
+
+```{r}
+source("plot_graph.R")
+plot.graph(result,result$meanv,"Velocity(mm/s)","conditions",20)
+```
+
+## 軌跡の導出
+
+```{r}
+source('Trajectory.R')
+plot_trajectory(result,dt)
+```

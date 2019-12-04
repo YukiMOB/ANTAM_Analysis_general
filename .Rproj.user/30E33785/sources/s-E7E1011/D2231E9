@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1575398710754.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "D2231E9",
+    "lastKnownWriteTime" : 1575431446,
+    "last_content_update" : 1575431446333,
+    "path" : "~/github/R_Study/R_Study_Lab_Event/plot_graph.R",
+    "project_path" : "plot_graph.R",
+    "properties" : {
+        "cursorPosition" : "16,1",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

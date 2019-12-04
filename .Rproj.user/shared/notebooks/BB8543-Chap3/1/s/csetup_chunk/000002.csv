@@ -1,0 +1,4 @@
+"0","require(""knitr"")"
+"0","source_path <- ""/Users/yuki/github/ANTAM_Analysis_R/"""
+"0","knitr::opts_chunk$set(echo = TRUE)"
+"0","opts_knit$set(root.dir =  source_path)"

@@ -1,0 +1,2 @@
+"0","# 全条件をまとめたデータ"
+"0","result <- data.frame(condition = condition, meanv = meanv, stop = stop.ratio, trajectory_xy_max = trajectory_xy_max,num = num)"

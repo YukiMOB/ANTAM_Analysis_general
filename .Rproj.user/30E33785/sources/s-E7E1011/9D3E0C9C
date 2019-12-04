@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1575398423550.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "9D3E0C9C",
+    "lastKnownWriteTime" : 1575431435,
+    "last_content_update" : 1575431435514,
+    "path" : "~/github/R_Study/R_Study_Lab_Event/Chap3.rmd",
+    "project_path" : "Chap3.rmd",
+    "properties" : {
+        "cursorPosition" : "95,64",
+        "last_setup_crc32" : "E7E1011e6289812",
+        "scrollLine" : "33"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

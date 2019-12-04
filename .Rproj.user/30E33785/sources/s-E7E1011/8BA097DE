@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1575429335255.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "8BA097DE",
+    "lastKnownWriteTime" : 1575399264,
+    "last_content_update" : 1575399264,
+    "path" : "~/github/R_Study/R_Study_Lab_Event/input_csv.R",
+    "project_path" : "input_csv.R",
+    "properties" : {
+        "cursorPosition" : "27,32",
+        "scrollLine" : "15"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

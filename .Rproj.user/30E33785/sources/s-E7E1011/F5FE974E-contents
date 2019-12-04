@@ -1,0 +1,282 @@
+---
+author: "Yuki Kawano"
+date: "2019/6/28"
+output: html_document
+---
+
+# 0.Setup
+```{r setup, include=FALSE}
+options(encoding="UTF-8")
+source("input_parameter.R")
+source("input_csv_from_ANTAM.R")
+file.path <- ""
+setwd(file.path)
+```
+
+# 1. Input data
+```{r}
+# # get file list
+fl <- list.files(path,recursive=T, include.dirs=T, pattern="mouse.*csv")
+dt <- get.datatable(fl)
+
+path.unique <- as.character(unique(dt$path))
+cond.unique <- c("120lx_50%", "830lx_50%", "8700lx_50%","120lx_20%", "830lx_20%", "8700lx_20%","120lx_70%", "830lx_70%", "8700lx_70%")
+n <- length(unique(dt$id))
+uid <- unique(dt$id)
+```
+# 2. Plot velocity histgram
+```{r}
+source("velocity_histgram.R")
+thresh <- get.thre() / 5
+```
+
+# 4. Plot comparison each data
+閾値で値をカットした速度、変位データを導出
+```{r}
+stop.ratio <- c()
+condition <- c()
+meanv <- c()
+nega <- c()
+humidity <- c()
+lx <- c()
+num <- c()
+path <- c()
+abs_4points_xy <- c()
+trajectory_xy_max <- c()
+stimulus_ede.per <- c()
+
+for (i in 1:n) {
+ subd <- subset(dt, id == as.numeric(uid[i]))
+ #condition
+ for (j in 1:length(cond.unique)) {
+   if (length(grep(cond.unique[j], subd$path)) > 0){
+     # humidity
+     if(grepl("70%",cond.unique[j]) == TRUE){
+       humidity[i] <- 70
+     }
+     else if(grepl("50%",cond.unique[j]) == TRUE){
+       humidity[i] <- 50
+     }else{
+       humidity[i] <- 20
+     }
+     
+      # lx
+     if(grepl("120lx",cond.unique[j]) == TRUE){
+       lx[i] <- 120
+     }else if(grepl("830lx",cond.unique[j]) == TRUE){
+       lx[i] <- 830
+     }else{
+       lx[i] <- 8700
+     }
+     
+     # condition
+     condition[i] = cond.unique[j]
+     path[i] = subd$path[j]
+   }
+ }
+ #velovity & stop raio
+ dx <- diff(subd$x.V1)
+ dy <- diff(subd$y.V1)
+ v <- sqrt(dx ^ 2 + dy ^ 2)
+ stop.ratio[i] <- length(which(v < thresh)) / length(v)
+ meanv[i] <- mean(v[v > thresh])*5
+ 
+ # minmax for trajectory
+ abs_4points_xy <- c(abs(min(subd$x.V1)), abs(min(subd$y.V1)), abs(max(subd$x.V1)), abs(max(subd$y.V1)))
+ trajectory_xy_max[i] <- max(abs_4points_xy)
+
+ #nega
+ q <- c()
+ q[which(subd$arc == 0)] <- 1
+ q[which(subd$arc == 180)] <- -1
+ q <- q[-length(q)]
+ z <- dx*q
+ nega[i] <- length(z[z<0])/length(z[z!=0])
+ num[i] <- (i - 1) %% 5
+ 
+ # Stimulus interface
+ move_arc <- (atan2(diff(subd$y.V1),diff(subd$x.V1)) * 180 / pi)
+ edge.range <- 20
+ edge.point <- subset(move_arc, abs(move_arc) < 90 + edge.range & abs(move_arc) > 90 - edge.range)
+ stimulus_ede.per[i] <- length(edge.point) / length(move_arc)
+ print(stimulus_ede.per[i])
+}
+```
+#5. 統計解析のためのデータ準備
+```{r}
+# 全条件をまとめたデータ
+result_all <- data.frame(condition = condition, meanv = meanv, stop = stop.ratio, nega = nega,
+                         humidity = humidity,lx  = lx, num = num,path = path,
+                         trajectory_xy_max = trajectory_xy_max,stimulus_ede.per = stimulus_ede.per)
+
+# 湿度別データ
+result_humidity_20 <- data.frame(condition = condition[humidity == 20], 
+                                 meanv = meanv[humidity == 20], 
+                                 stop = stop.ratio[humidity == 20], 
+                                 nega = nega[humidity == 20],
+                                 humidity = humidity[humidity == 20],
+                                 lx = lx[humidity == 20],
+                                 num = num[humidity == 20],
+                                 trajectory_xy_max = trajectory_xy_max[humidity == 20],
+                                 path = path[humidity == 20],
+                                 stimulus_ede.per = stimulus_ede.per[humidity == 20])
+
+result_humidity_50 <- data.frame(condition = condition[humidity == 50], 
+                                 meanv = meanv[humidity == 50], 
+                                 stop = stop.ratio[humidity == 50],
+                                 nega = nega[humidity == 50],
+                                 humidity = humidity[humidity == 50],
+                                 lx = lx[humidity == 50],
+                                 num = num[humidity == 50],
+                                 trajectory_xy_max = trajectory_xy_max[humidity == 50],
+                                 path = path[humidity == 50],
+                                 stimulus_ede.per = stimulus_ede.per[humidity == 50])
+
+result_humidity_70 <- data.frame(condition = condition[humidity == 70], 
+                                 meanv = meanv[humidity == 70], 
+                                 stop = stop.ratio[humidity == 70],
+                                 nega = nega[humidity == 70],
+                                 humidity = humidity[humidity == 70],
+                                 lx = lx[humidity == 70],
+                                 num = num[humidity == 70],
+                                 trajectory_xy_max = trajectory_xy_max[humidity == 70],
+                                 path = path[humidity == 70],
+                                 stimulus_ede.per = stimulus_ede.per[humidity == 70])
+```
+
+#6.湿度条件別で統計解析，対応のない2群
+```{r}
+kruskal.test(x = result_all$nega, g = factor(result_all$lx == 120))
+kruskal.test(x = result_all$nega, g = factor(result_all$lx == 830))
+kruskal.test(x = result_all$nega, g = factor(result_all$lx == 8700))
+
+
+# 120 lx
+# nega
+
+wilcox.test(result_humidity_20$nega[result_humidity_20$condition == "120lx_20%"],
+           # result_humidity_50$nega[result_humidity_50$condition == "120lx_50%"],
+           result_humidity_70$nega[result_humidity_70$condition == "120lx_70%"],
+           paired=FALSE)
+
+# wilcox.test(result_humidity_20$meanv[result_humidity_20$condition == "120_lx_20%"],
+#            result_humidity_60$meanv[result_humidity_60$condition == "120_lx_60%"],
+#            paired=FALSE)
+# wilcox.test(result_humidity_20$stop[result_humidity_20$condition == "120_lx_20%"],
+#            result_humidity_60$stop[result_humidity_60$condition == "120_lx_60%"],
+#            paired=FALSE)
+# 830 lx
+# nega
+wilcox.test(result_humidity_20$nega[result_humidity_20$condition == "830lx_20%"],
+           # result_humidity_50$nega[result_humidity_50$condition == "830lx_50%"],
+           result_humidity_70$nega[result_humidity_70$condition == "830lx_70%"],
+           paired=FALSE)
+
+# wilcox.test(result_humidity_20$meanv[result_humidity_20$condition == "830_lx_20%"],
+#           result_humidity_60$meanv[result_humidity_60$condition == "830_lx_60%"],
+#           paired=FALSE)
+#wilcox.test(result_humidity_20$stop[result_humidity_20$condition == "830_lx_20%"],
+#           result_humidity_60$stop[result_humidity_60$condition == "830_lx_60%"],
+#           paired=FALSE)
+
+# 8700 lx
+# nega
+wilcox.test(result_humidity_20$nega[result_humidity_20$condition == "8700lx_20%"],
+           # result_humidity_50$nega[result_humidity_50$condition == "870lx_50%"],
+           result_humidity_70$nega[result_humidity_70$condition == "8700lx_70%"],
+           paired=FALSE)
+
+#wilcox.test(result_humidity_20$meanv[result_humidity_20$condition == "8700_lx_20%"],
+#           result_humidity_60$meanv[result_humidity_60$condition == "8700_lx_60%"],
+#           paired=FALSE)
+#wilcox.test(result_humidity_20$stop[result_humidity_20$condition == "8700_lx_20%"],
+
+#result_humidity_60$stop[result_humidity_60$condition == "8700_lx_60%"],
+ #          paired=FALSE)
+
+# result <- data.frame(condition = condition, meanv = meanv, stop = stop.ratio, nega = nega)
+# # kruskal.test(x = result$meanv, g = factor(result$condition))
+# # kruskal.test(x = result$stop, g = factor(result$condition))
+# # # Steel.Dwass(result$stop, as.numeric((result$condition)))
+# kruskal.test(x = result$nega, g = factor(result$condition))
+# Steel.Dwass(result$nega, as.numeric((result$condition)))
+
+t.test(result_humidity_20$nega[result_humidity_20$lx==120],mu = 0.5) # positive
+t.test(result_humidity_20$nega[result_humidity_20$lx==830],mu = 0.5) # negative
+t.test(result_humidity_20$nega[result_humidity_20$lx==8700],mu = 0.5) # negative
+
+t.test(result_humidity_50$nega[result_humidity_50$lx==120],mu = 0.5) # no
+t.test(result_humidity_50$nega[result_humidity_50$lx==830],mu = 0.5) # no
+t.test(result_humidity_50$nega[result_humidity_50$lx==8700],mu = 0.5) # negative
+
+t.test(result_humidity_70$nega[result_humidity_70$lx==120],mu = 0.5) # no
+t.test(result_humidity_70$nega[result_humidity_70$lx==830],mu = 0.5) # no
+t.test(result_humidity_70$nega[result_humidity_70$lx==8700],mu = 0.5) # negative
+
+```
+
+# 対応のある多重比較
+```{r}
+pairwise.t.test(x = result_humidity_20$nega, factor(result_humidity_20$condition),p.adj = "holm")
+pairwise.t.test(x = result_humidity_50$nega, factor(result_humidity_50$condition),p.adj = "holm")
+pairwise.t.test(x = result_humidity_70$nega, factor(result_humidity_70$condition),p.adj = "holm")
+
+
+# friedman.test(y = matrix(c(result_humidity_20$nega[result_humidity_20$condition == "120_lx_20%"],
+#                            result_humidity_20$nega[result_humidity_20$condition == "830_lx_20%"],
+#                            result_humidity_20$nega[result_humidity_20$condition == "8700_lx_20%"]),
+#               ncol = 5))
+# 
+# friedman.test(y = matrix(c(result_humidity_60$nega[result_humidity_60$condition == "120_lx_60%"],
+#                            result_humidity_60$nega[result_humidity_60$condition == "830_lx_60%"],
+#                            result_humidity_60$nega[result_humidity_60$condition == "8700_lx_60%"]),
+#               ncol = 5))
+
+# Steel.Dwass(result_humidity_20$nega, as.numeric((result_humidity_20$condition)))
+
+# kruskal.test(x = result_humidity_20$nega,  g = factor(result_humidity_20$condition))
+# kruskal.test(x = result_humidity_60$nega,  g = factor(result_humidity_60$condition))
+# Steel.Dwass(result_humidity_20$nega, as.numeric((result_humidity_20$condition)))
+
+```
+
+#6.平均とSEをプロット
+```{r}
+source("plot_graph.R")
+# plot.graph_07_2019(result_humidity_20,result_humidity_20$meanv,"velocity(mm/s)","conditions",20)
+# plot.graph_07_2019(result_humidity_20,result_humidity_20$stop, "Stop ratio","conditions",1.0)
+# plot.graph_07_2019(result_humidity_20,result_humidity_20$nega, "Negative ratio","conditions",1.0)
+# 
+# plot.graph_07_2019(result_humidity_50,result_humidity_50$meanv,"velocity(mm/s)","conditions",20)
+# plot.graph_07_2019(result_humidity_50,result_humidity_50$stop, "Stop ratio","conditions",1.0)
+# plot.graph_07_2019(result_humidity_50,result_humidity_50$nega, "Negative ratio","conditions",1.0)
+# 
+# plot.graph_07_2019(result_humidity_70,result_humidity_70$meanv,"velocity(mm/s)","conditions",20)
+# plot.graph_07_2019(result_humidity_70,result_humidity_70$stop, "Stop ratio","conditions",1.0)
+# plot.graph_07_2019(result_humidity_70,result_humidity_70$nega, "Negative ratio","conditions",1.0)
+set.lx <- c(120,830,8700)
+set.hum <- c(20,50,70)
+
+# plot.graph_all(result_all,"Negative ratio","conditions",1.0,set.hum,set.lx)
+
+# plot.graph_all(result_all,subset(result_all$nega,result_all$lx == set.lx & result_all$humidity == set.hum),"Negative ratio","conditions",1.0,set.hum,set.lx)
+
+plot.bar_all.nega(result_all,result_all$nega,"Negative ratio","conditions",1.0)
+plot.bar_all.nega(result_all,result_all$meanv,"Velocity(mm/s)","conditions",20)
+```
+
+## 軌跡の導出
+
+```{r}
+source('Trajectory.R')
+# plot_trajectory.merge(result_humidity_20,dt)
+# plot_trajectory.merge(result_humidity_50,dt)
+# plot_trajectory.merge(result_humidity_70,dt)
+# plot_trajectory.merge.col(result_humidity_20,dt)
+# plot_trajectory.merge.col(result_humidity_50,dt)
+# dev.off()
+# plot_trajectory.merge.col(result_humidity_70,dt)
+ plot_trajectory.merge.col.all(result_all,dt,180)
+ dev.off()
+ plot_trajectory.merge.col.all(result_all,dt,0)
+```
